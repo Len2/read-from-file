@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IProductService } from './interfaces';
 import { ProductRepository, VariantProductRepository } from './repositories';
 import { writeFileSync, mkdirSync, createReadStream } from 'fs';
@@ -76,11 +76,8 @@ export class ProductService implements IProductService {
     });
 
     const resolvedData = await Promise.all(formattedData);
-    console.log('11111111');
     await this.prepareToSaveProductVariant(resolvedData);
-    console.log('2222222');
     await this.prepareToSaveProduct(resolvedData);
-    console.log('11113333331111');
   }
 
   private async prepareToSaveProductVariant(formattedData) {
@@ -245,5 +242,45 @@ export class ProductService implements IProductService {
     }
 
     return { newProducts, updates };
+  }
+
+  async removeProducts(id: string): Promise<void> {
+    try {
+      const variantExists = await this.variantProductRepository.findOne({
+        where: { ProductID: id },
+      });
+      if (variantExists) {
+        throw new NotFoundException(
+          'Variant product exists with the same ProductID. Skipping deletion.',
+        );
+      } else {
+        await this.productRepository.deleteProductById(id);
+      }
+    } catch (error) {
+      throw new Error(`Error deleting products: ${error.message}`);
+    }
+  }
+
+  async getAllProductsWithVariants(page: number, limit: number) {
+    const offset = (page - 1) * limit;
+    const [products, total] = await this.productRepository.findAndCount({
+      skip: offset,
+      take: limit,
+    });
+    const productsWithVariants = await Promise.all(
+      products.map(async (product) => {
+        const variants = await this.variantProductRepository.find({
+          where: { ProductID: product.ProductID },
+        });
+        return { product, variants };
+      }),
+    );
+    return {
+      products: productsWithVariants,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

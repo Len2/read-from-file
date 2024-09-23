@@ -1,10 +1,13 @@
 import {
   BadRequestException,
+  Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -20,6 +23,9 @@ import { Public } from '../../common/decorators';
 import { ProductService } from './product.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { DeleteProductsDto } from './dto/delete-products.dto';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Controller('product')
 @Public()
@@ -57,9 +63,30 @@ export class ProductController implements IProductController {
   }
 
   @Public()
+  @Cron(CronExpression.EVERY_DAY_AT_NOON)
   @Get('read-files')
   @HttpCode(HttpStatus.OK)
   async readFile(): Promise<void> {
     return await this.productService.readFile();
+  }
+
+  @Public()
+  @Delete()
+  @ApiOperation({ summary: 'Delete multiple products by IDs' })
+  @ApiResponse({ status: 200, description: 'Products successfully deleted.' })
+  @ApiBody({ type: DeleteProductsDto })
+  async delete(@Body() deleteProductsDto: DeleteProductsDto) {
+    return await this.productService.removeProducts(deleteProductsDto.id);
+  }
+
+  @Public()
+  @Get('getProduct')
+  async getProducts(@Query() paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+    const response = await this.productService.getAllProductsWithVariants(
+      page,
+      limit,
+    );
+    return { ok: true, data: response };
   }
 }

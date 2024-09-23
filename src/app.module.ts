@@ -7,7 +7,6 @@ import { NestEmitterModule } from 'nest-emitter';
 import { EventEmitter } from 'stream';
 
 import { AppDataSource } from './config';
-import { VariantProductModule } from './api/variant_products/variant_product.module';
 import { ProductModule } from './api/products/product.module';
 
 @Module({
@@ -18,7 +17,6 @@ import { ProductModule } from './api/products/product.module';
     }),
     NestEmitterModule.forRoot(new EventEmitter()),
     ProductModule,
-    //VariantProductModule,
   ],
   controllers: [AppController],
   providers: [AppService, Logger],

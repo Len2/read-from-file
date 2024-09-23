@@ -18,11 +18,6 @@ export class Product {
   @Column()
   status: string;
 
-  // @Column(() => ProductInfo)
-  // info: ProductInfo;
-
-  // from .txt file
-
   @Column()
   SiteSource: string;
 
@@ -52,8 +47,6 @@ export class Product {
 
   @Column()
   IsTBD: string;
-
-  // end
 
   @Column()
   CategoryID: string;
